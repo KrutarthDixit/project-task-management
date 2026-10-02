@@ -5,15 +5,25 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
+use App\Service\ProjectService;
+use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
+
+    public function __construct(
+        private ProjectService $projectService
+    ) {
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        return Inertia::render('Project/Index', [
+            'projects' => $this->projectService->getAllProjects()
+        ]);
     }
 
     /**
@@ -21,7 +31,9 @@ class ProjectController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('Project/Create', [
+            'users' => $this->projectService->getAllUsers()
+        ]);
     }
 
     /**
@@ -29,7 +41,10 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request)
     {
-        //
+        $data = $request->validated();
+        $this->projectService->storeProject($data);
+
+        return redirect()->route('project.index')->with('success', 'Project created successfully');
     }
 
     /**
@@ -37,7 +52,9 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        //
+        return Inertia::render('Project/View', [
+            'project' => $project->load(['manager', 'tasks'])
+        ]);
     }
 
     /**
@@ -45,7 +62,10 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-        //
+        return Inertia::render('Project/Edit', [
+            'users' => $this->projectService->getAllUsers(),
+            'project' => $project->load(['manager'])
+        ]);
     }
 
     /**
@@ -53,7 +73,10 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project)
     {
-        //
+        $data = $request->validated();
+        $this->projectService->UpdateProject($project->id, $data);
+
+        return redirect()->route('project.index')->with('success', 'Project updated successfully');
     }
 
     /**
@@ -61,6 +84,8 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        //
+        $this->projectService->destroyProject($project->id);
+
+        return redirect()->route('project.index')->with('success', 'Project deleted successfully');
     }
 }

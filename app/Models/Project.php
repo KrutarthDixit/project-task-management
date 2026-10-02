@@ -48,7 +48,7 @@ class Project extends Model
     /**
      * Get the tasks of the Project.
      */
-    public function task(): HasMany
+    public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'project_id');
     }
