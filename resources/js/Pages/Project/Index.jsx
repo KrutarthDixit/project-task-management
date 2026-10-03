@@ -1,10 +1,45 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import DangerButton from '@/Components/DangerButton';
+import { useState, useEffect, useRef } from 'react';
 
-export default function Project({ projects }) {
+export default function Project({ projects, queryParams = {} }) {
+    const [search, setSearch] = useState(queryParams.search || '');
+    const [status, setStatus] = useState(queryParams.status || '');
+    const isInitialMount = useRef(true);
+
     const deleteProject = (id) => {
         router.delete(route('project.destroy', id));
+    };
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            applyFilters({ search, status });
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const handleStatusChange = (e) => {
+        const newStatus = e.target.value;
+        setStatus(newStatus);
+        applyFilters({ search, status: newStatus });
+    };
+
+    const applyFilters = (params) => {
+        const filteredParams = {};
+        if (params.search) filteredParams.search = params.search;
+        if (params.status) filteredParams.status = params.status;
+
+        router.get(route('project.index'), filteredParams, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -31,6 +66,40 @@ export default function Project({ projects }) {
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
+                            {/* Search & Filter Bar */}
+                            <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
+                                <div className="relative w-full sm:w-1/2">
+                                    <svg
+                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={2}
+                                        stroke="currentColor"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        placeholder="Search projects by name..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-4 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+
+                                <select
+                                    value={status}
+                                    onChange={handleStatusChange}
+                                    className="w-full sm:w-48 rounded-md border border-gray-300 py-2 pl-3 pr-8 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="ongoing">Ongoing</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+
                             {projects.data.length === 0 ? (
                                 <div className="p-6 text-gray-900">
                                     No Projects found
@@ -54,7 +123,23 @@ export default function Project({ projects }) {
                                                         <td className="whitespace-nowrap px-6 py-4 font-medium">{index + 1}</td>
                                                         <td className="whitespace-nowrap px-6 py-4">{project.manager.name}</td>
                                                         <td className="whitespace-nowrap px-6 py-4">{project.name}</td>
-                                                        <td className="whitespace-nowrap px-6 py-4">{project.status}</td>
+                                                        <td className="whitespace-nowrap px-6 py-4">
+                                                            <select
+                                                                value={project.status}
+                                                                onChange={(e) =>
+                                                                    router.patch(
+                                                                        route('project.update-status', project.id),
+                                                                        { status: e.target.value },
+                                                                        { preserveScroll: true }
+                                                                    )
+                                                                }
+                                                                className='rounded-md border border-gray-300 py-1 pl-2 pr-7 text-xs font-semibold shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer'
+                                                            >
+                                                                <option value="pending">Pending</option>
+                                                                <option value="ongoing">Ongoing</option>
+                                                                <option value="completed">Completed</option>
+                                                            </select>
+                                                        </td>
                                                         <td className="whitespace-nowrap px-6 py-4">
                                                             <div className='flex items-center justify-center gap-2'>
                                                                 <Link

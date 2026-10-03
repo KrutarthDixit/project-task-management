@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Service\ProjectService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
@@ -19,10 +20,13 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $filters = $request->only(['search', 'status']);
+
         return Inertia::render('Project/Index', [
-            'projects' => $this->projectService->getAllProjects()
+            'projects' => $this->projectService->getAllProjects($filters),
+            'queryParams' => $filters,
         ]);
     }
 
@@ -87,5 +91,19 @@ class ProjectController extends Controller
         $this->projectService->destroyProject($project->id);
 
         return redirect()->route('project.index')->with('success', 'Project deleted successfully');
+    }
+
+    /**
+     * Update the status of the specified project.
+     */
+    public function updateStatus(Request $request, Project $project)
+    {
+        $data = $request->validate([
+            'status' => ['required','in:pending,ongoing,completed'],
+        ]);
+
+        $project->update(['status' => $data['status']]);
+
+        return redirect()->route('project.index')->with('success', 'Project status updated successfully');
     }
 }

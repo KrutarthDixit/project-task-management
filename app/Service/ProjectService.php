@@ -17,9 +17,19 @@ class ProjectService
     ) {
     }
 
-    public function getAllProjects()
+    public function getAllProjects(array $filters = [])
     {
-        return $this->project->with('manager')->paginate(10);
+        $query = $this->project->with('manager');
+
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->paginate(10)->withQueryString();
     }
 
     public function getProjectById(string $id)
